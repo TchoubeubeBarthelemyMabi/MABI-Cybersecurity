@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+    <title>Connexion - MABI CS</title>
+    <style>
+        body {
+            background-image: url('{{ url_for('static', filename='bg.jpg') }}');
+            background-size: cover;
+            background-position: center;
+            font-family: Arial, sans-serif;
+            margin: 0; padding: 0; color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background: rgba(255,255,255,0.9);
+            padding: 40px 50px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 350px;
+        }
+        .login-container h2 {
+            margin-bottom: 25px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .login-container p {
+            margin-bottom: 25px;
+            font-size: 16px;
+            color: #555;
+        }
+        .input-field {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border-radius: 7px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .btn-primary {
+            margin-top: 20px;
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            background-color: #2196F3;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #0b7dda;
+        }
+        .signup-link {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .flash-message {
+            color: red;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <h2>🔐 Connexion</h2>
+    <p>Connectez-vous pour accéder à vos outils de sécurité</p>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-message">{{ messages[0] }}</div>
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div>
+            {{ form.email.label }}<br>
+            {{ form.email(class_="input-field") }}
+        </div>
+
+        <div>
+            {{ form.password.label }}<br>
+            {{ form.password(class_="input-field") }}
+        </div>
+
+        <div>
+            {{ form.submit(class_="btn-primary") }}
+        </div>
+    </form>
+
+    <div class="signup-link">
+        Pas encore de compte ? <a href="{{ url_for('signup') }}">Inscrivez-vous</a>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-background" style="max-width:900px; margin:auto;">
+  <h2 style="font-size:32px; margin-bottom:20px;">Scanner de Vulnérabilités</h2>
+
+  <!-- Formulaire scanner site -->
+  <form id="vulnscanForm" method="POST" style="margin-bottom:20px;">
+    <input type="text" name="site_url" placeholder="https://example.com"
+           style="width:70%; padding:12px; font-size:16px; border-radius:6px; border:1px solid #ccc" required>
+    <button type="submit" style="padding:12px 20px; font-size:16px;
+            background:#2196F3; color:#fff; border:none; border-radius:6px; cursor:pointer;">
+      Scanner
+    </button>
+  </form>
+
+  <!-- Loader visible uniquement pendant le scan -->
+  <div id="loading" style="display:none;">
+    <div class="loader"></div>
+    <p style="text-align:center; font-weight:600;">Analyse en cours… Veuillez patienter ⏳</p>
+  </div>
+
+  {% if results %}
+    <h3 style="margin-top:30px;">🔍 Résultats détaillés :</h3>
+    <ul style="font-size:16px; line-height:1.8; padding-left:20px;">
+      <li><strong>🛡️ Headers de sécurité :</strong>
+        <ul>
+          {% for h in results.headers %}
+            <li>{{ h|safe }}</li>
+          {% endfor %}
+        </ul>
+      </li>
+
+      <li><strong>🌐 Sous-domaines accessibles :</strong>
+        <ul>
+          {% for sd in results.subdomains %}
+            <li>{{ sd|safe }}</li>
+          {% endfor %}
+        </ul>
+      </li>
+
+      <li><strong>🔒 Pages sensibles :</strong>
+        <ul>
+          {% for p in results.sensitive %}
+            <li>{{ p|safe }}</li>
+          {% endfor %}
+        </ul>
+      </li>
+
+      <li><strong>💉 Test d'injection SQL :</strong><br>
+        {{ results.sql|safe }}
+      </li>
+
+      <li><strong>📡 Ports ouverts :</strong>
+        <ul>
+          {% for port in results.ports %}
+            <li>{{ port|safe }}</li>
+          {% endfor %}
+        </ul>
+      </li>
+    </ul>
+
+    <p class="{{ results.status }}" style="font-size:18px; font-weight:600; margin-top:20px;">
+      {{ results.conclusion }}
+    </p>
+
+    {% if results.status == 'danger' %}
+    <p style="margin-top:10px;">🚨 Pour un audit complet et des recommandations personnalisées, contactez notre consultant en sécurité.</p>
+    <a href="mailto:tchoubeubemab@gmail.com?subject=Vulnérabilité détectée sur mon site"
+       style="display:inline-block; margin-top:10px; padding:10px 20px; background:#e53935; color:white; text-decoration:none; border-radius:5px;">
+      📧 Contacter un consultant
+    </a>
+    {% endif %}
+  {% endif %}
+</div>
+
+<!-- Script spécifique au formulaire vulnérabilité -->
+<script>
+document.getElementById("vulnscanForm").addEventListener("submit", function() {
+  document.getElementById("loading").style.display = "block";
+});
+</script>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="text-background" style="max-width:600px; margin:auto;">
+  <h2 style="font-size:32px; margin-bottom:20px;">Mon compte & Clé API</h2>
+
+  <p>Générez une clé API personnelle pour accéder aux endpoints sécurisés :</p>
+  <form method="POST" style="margin-bottom:20px;">
+    <button type="submit"
+            style="padding:12px 20px; font-size:16px; background:#2196F3; color:#fff; border:none; border-radius:6px; cursor:pointer;">
+      Générer une nouvelle clé
+    </button>
+  </form>
+
+  {% if api_key %}
+    <div style="background:#f5f5f5; padding:15px; border-radius:6px; word-break:break-all;">
+      <strong>🔑 Votre nouvelle clé API :</strong><br>
+      <code>{{ api_key }}</code>
+      <p style="color:#d32f2f; font-weight:bold; margin-top:10px;">
+        ⚠️ Copiez-la maintenant : vous ne pourrez plus la revoir plus tard.
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

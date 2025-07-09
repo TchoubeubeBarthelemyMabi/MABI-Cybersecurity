@@ -1,0 +1,84 @@
+<!doctype html>
+<html>
+<head>
+    <title>Inscription - MABI SECURITY</title>
+    <style>
+        body {
+            background-image: url('{{ url_for('static', filename='bg.jpg') }}');
+            background-size: cover;
+            background-position: center;
+            font-family: Arial, sans-serif;
+            margin: 0; padding: 0; color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .signup-container {
+            background: rgba(255,255,255,0.9);
+            padding: 40px 50px;
+            border-radius: 12px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 350px;
+        }
+        .signup-container h2 {
+            margin-bottom: 25px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 14px;
+            margin: 12px 0;
+            border-radius: 7px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .login-link {
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        .flash-message {
+            color: red;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="signup-container">
+    <h2>📝 Inscription</h2>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-message">{{ messages[0] }}</div>
+      {% endif %}
+    {% endwith %}
+    <form method="post">
+        <input type="email" name="email" placeholder="Email" required><br>
+        <input type="password" name="password" placeholder="Mot de passe" required><br>
+        <button type="submit">Créer le compte</button>
+    </form>
+    <div class="login-link">
+        Déjà un compte ? <a href="{{ url_for('login') }}">Connectez-vous</a>
+    </div>
+</div>
+
+</body>
+</html>

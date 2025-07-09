@@ -1,0 +1,12 @@
+*.db
+__pycache__/
+.env
+instance/
+*.pyc
+*.pyo
+*.pyd
+*.log
+.DS_Store
+.env.local
+.env.production
+.env.development
