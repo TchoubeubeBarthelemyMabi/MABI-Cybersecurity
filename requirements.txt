@@ -5,3 +5,4 @@ Flask-WTF
 Flask-Migrate
 gunicorn
 requests
+python-dotenv
