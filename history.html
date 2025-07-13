@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="text-background" style="max-width:900px; margin:auto;">
+  <h2 style="font-size:32px; margin-bottom:20px;">📜 Historique des scans</h2>
+
+  {% if histories %}
+  <table style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr style="background:#2196F3; color:white;">
+        <th style="padding:10px;">Type</th>
+        <th style="padding:10px;">Cible</th>
+        <th style="padding:10px;">Résultat</th>
+        <th style="padding:10px;">Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h in histories %}
+      <tr style="border-bottom:1px solid #ddd;">
+        <td style="padding:10px;">{{ h.scan_type }}</td>
+        <td style="padding:10px;">{{ h.target }}</td>
+        <td style="padding:10px; font-weight:bold; color:
+          {% if h.status == 'danger' %}#e53935
+          {% elif h.status == 'safe' %}#43A047
+          {% else %}#FFA000{% endif %};">
+          {{ h.result }}
+        </td>
+        <td style="padding:10px;">{{ h.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="font-size:18px;">Aucun scan enregistré pour le moment.</p>
+  {% endif %}
+</div>
+{% endblock %}
