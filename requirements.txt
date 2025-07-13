@@ -6,3 +6,4 @@ Flask-SQLAlchemy
 gunicorn
 python-dotenv
 requests
+email_validator
