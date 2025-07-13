@@ -1,8 +1,8 @@
 Flask
-Flask-SQLAlchemy
 Flask-Login
 Flask-WTF
 Flask-Migrate
+Flask-SQLAlchemy
 gunicorn
-requests
 python-dotenv
+requests
