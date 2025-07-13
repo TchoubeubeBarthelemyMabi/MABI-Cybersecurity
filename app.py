@@ -107,26 +107,20 @@ def verifier_url(url):
             }
         time.sleep(1)
     return {"status": "waiting", "message": "⏳ Analyse en cours, patientez…"}
-
 @app.route('/login', methods=['GET', 'POST'])
-@login_required
-def home():
-    result = None
-    if request.method == 'POST':
-        url = request.form.get('url')
-        if url:
-            result = verifier_url(url)
-            if current_user.is_authenticated:
-                history = ScanHistory(
-                    user_id=current_user.id,
-                    scan_type='link',
-                    target=url,
-                    result=result['message'],
-                    status=result['status']
-                )
-                db.session.add(history)
-                db.session.commit()
-    return render_template('home.html', result=result)
+def login():
+    form = LoginForm()
+    try:
+        if form.validate_on_submit():
+            u = User.query.filter_by(email=form.email.data).first()
+            if u and u.check_password(form.password.data):
+                login_user(u)
+                flash("Connexion réussie !", "success")
+                return redirect(url_for('home'))  # rediriger vers la page principale
+            flash("Email ou mot de passe invalide.", "danger")
+    except Exception as e:
+        return f"⚠️ Erreur lors du traitement du formulaire : {e}"
+    return render_template('login.html', form=form)
 @app.route('/vulnscan', methods=['GET','POST'])
 @login_required
 def vulnscan():
