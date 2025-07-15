@@ -10,6 +10,17 @@ from wtforms.validators import DataRequired, Email, EqualTo
 from werkzeug.security import generate_password_hash, check_password_hash
 from security_module import attach_security
 from vuln_scan import scan_site
+import traceback
+from werkzeug.exceptions import HTTPException
+from flask import jsonify
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    tb = traceback.format_exc()
+    app.logger.error(f"Exception: {e}\n{tb}")
+    if isinstance(e, HTTPException):
+        return e
+    return jsonify({"error": "Une erreur serveur est survenue."}), 500
 
 # Chargement dotenv (local uniquement)
 try:
