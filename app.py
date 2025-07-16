@@ -1,4 +1,3 @@
-# [Importations système & sécurité]
 import os, time, binascii, hashlib, hmac, requests, traceback
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -10,30 +9,25 @@ from wtforms.validators import DataRequired, Email, EqualTo
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import HTTPException
 
-# [Modules personnalisés]
 from security_module import attach_security
 from vuln_scan import scan_site
 
-# [Chargement des variables d’environnement]
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+from dotenv import load_dotenv
+load_dotenv()
 
-# [Initialisation Flask]
+# App init
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_secret_key')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'CHANGE_ME')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///mabi.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# [Extensions Flask]
+# Extensions
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, render_as_batch=True)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# [Gestion des exceptions]
+# Error handler global
 @app.errorhandler(Exception)
 def handle_exception(e):
     tb = traceback.format_exc()
@@ -42,7 +36,7 @@ def handle_exception(e):
         return e
     return jsonify({"error": "Une erreur serveur est survenue."}), 500
 
-# [Modèle utilisateur]
+# Models
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
@@ -67,7 +61,6 @@ class User(db.Model, UserMixin):
             return False
         return hmac.compare_digest(self.api_key_hash, hashlib.sha256(key.encode()).hexdigest())
 
-# [Historique des scans]
 class ScanHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -77,7 +70,11 @@ class ScanHistory(db.Model):
     status = db.Column(db.String(20), nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
 
-# [Formulaires]
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Forms
 class SignupForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Mot de passe', validators=[DataRequired(), EqualTo('confirm')])
@@ -89,13 +86,9 @@ class LoginForm(FlaskForm):
     password = PasswordField('Mot de passe', validators=[DataRequired()])
     submit = SubmitField('Connexion')
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
 VT_API_KEY = os.getenv('VT_API_KEY', '')
 
-# [Scan VirusTotal]
+# VirusTotal checker
 def verifier_url(url):
     if not url:
         return {"status": "error", "message": "URL vide."}
@@ -125,7 +118,7 @@ def verifier_url(url):
     except Exception as e:
         return {"status": "error", "message": f"Exception lors de l’analyse : {e}"}
 
-# [Routes de ton app]
+# Routes
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
@@ -147,27 +140,31 @@ def vulnscan():
     if request.method == 'POST':
         site = request.form.get('site_url')
         if site:
-            report = scan_site(site)
-            vuln_count = report.get('vuln_count', 0)
-            vuln_status = "safe" if vuln_count == 0 else "warning" if vuln_count < 3 else "danger"
-            conclusion = {
-                "safe": "✅ Site sécurisé ! 🎉",
-                "warning": "⚠️ Quelques vulnérabilités détectées.",
-                "danger": "❗️ Plusieurs vulnérabilités critiques détectées !"
-            }[vuln_status]
-            context = {
-                "headers": [f"{'🟢' if v=='✅' else '🔴'} {k}" for k, v in report['headers'].items()],
-                "subdomains": report['subdomains'],
-                "sensitive": report['sensitive_paths'],
-                "sql": report.get('sql_injection'),
-                "ports": report['open_ports'],
-                "conclusion": conclusion,
-                "status": vuln_status
-            }
-            history = ScanHistory(user_id=current_user.id, scan_type='site',
-                                  target=site, result=conclusion, status=vuln_status)
-            db.session.add(history)
-            db.session.commit()
+            try:
+                report = scan_site(site)
+                vuln_count = report.get('vuln_count', 0)
+                vuln_status = "safe" if vuln_count == 0 else "warning" if vuln_count < 3 else "danger"
+                conclusion = {
+                    "safe": "✅ Site sécurisé ! 🎉",
+                    "warning": "⚠️ Quelques vulnérabilités détectées.",
+                    "danger": "❗️ Plusieurs vulnérabilités critiques détectées !"
+                }[vuln_status]
+                context = {
+                    "headers": [f"{'🟢' if v=='✅' else '🔴'} {k}" for k, v in report['headers'].items()],
+                    "subdomains": report['subdomains'],
+                    "sensitive": report['sensitive_paths'],
+                    "sql": report.get('sql_injection'),
+                    "ports": report['open_ports'],
+                    "conclusion": conclusion,
+                    "status": vuln_status
+                }
+                history = ScanHistory(user_id=current_user.id, scan_type='site',
+                                      target=site, result=conclusion, status=vuln_status)
+                db.session.add(history)
+                db.session.commit()
+            except Exception as e:
+                app.logger.error(f"Erreur scan_site: {e}")
+                flash("Erreur lors du scan, veuillez réessayer.", "danger")
     return render_template('vulnscan.html', results=context)
 
 @app.route('/history')
@@ -179,13 +176,17 @@ def history():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     form = LoginForm()
-    if form.validate_on_submit():
-        u = User.query.filter_by(email=form.email.data).first()
-        if u and u.check_password(form.password.data):
-            login_user(u)
-            flash("Connexion réussie !", "success")
-            return redirect(url_for('home'))
-        flash("Email ou mot de passe invalide.", "danger")
+    try:
+        if form.validate_on_submit():
+            u = User.query.filter_by(email=form.email.data).first()
+            if u and u.check_password(form.password.data):
+                login_user(u)
+                flash("Connexion réussie !", "success")
+                return redirect(url_for('home'))
+            flash("Email ou mot de passe invalide.", "danger")
+    except Exception as e:
+        app.logger.error(f"Erreur dans /login : {e}\n{traceback.format_exc()}")
+        flash("Erreur serveur. Réessayez.", "danger")
     return render_template('login.html', form=form)
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -209,3 +210,15 @@ def logout():
     logout_user()
     flash("Déconnexion réussie.", "info")
     return redirect(url_for('login'))
+
+@app.route('/account')
+@login_required
+def account():
+    return render_template('account.html')
+
+@app.route('/about')
+@login_required
+def about():
+    return render_template('about.html')
+
+attach_security(app)
