@@ -8,7 +8,9 @@
             background-size: cover;
             background-position: center;
             font-family: Arial, sans-serif;
-            margin: 0; padding: 0; color: #333;
+            margin: 0;
+            padding: 0;
+            color: #333;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -20,14 +22,14 @@
             border-radius: 12px;
             box-shadow: 0 0 30px rgba(0,0,0,0.2);
             text-align: center;
-            width: 350px;
+            width: 400px;
         }
-        .signup-container h2 {
+        h2 {
             margin-bottom: 25px;
             font-size: 28px;
             font-weight: 700;
         }
-        input[type="email"], input[type="password"] {
+        .input-field {
             width: 100%;
             padding: 14px;
             margin: 12px 0;
@@ -35,7 +37,7 @@
             border: 1px solid #ccc;
             font-size: 16px;
         }
-        button {
+        .btn-primary {
             margin-top: 20px;
             width: 100%;
             padding: 16px;
@@ -47,7 +49,7 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
-        button:hover {
+        .btn-primary:hover {
             background-color: #45a049;
         }
         .login-link {
@@ -65,16 +67,45 @@
 
 <div class="signup-container">
     <h2>📝 Inscription</h2>
+
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         <div class="flash-message">{{ messages[0] }}</div>
       {% endif %}
     {% endwith %}
-    <form method="post">
-        <input type="email" name="email" placeholder="Email" required><br>
-        <input type="password" name="password" placeholder="Mot de passe" required><br>
-        <button type="submit">Créer le compte</button>
+
+    <form method="POST">
+        {{ form.hidden_tag() }}
+
+        <div>
+            {{ form.email.label }}<br>
+            {{ form.email(class_='input-field') }}
+            {% for error in form.email.errors %}
+              <div class="flash-message">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div>
+            {{ form.password.label }}<br>
+            {{ form.password(class_='input-field') }}
+            {% for error in form.password.errors %}
+              <div class="flash-message">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div>
+            {{ form.confirm.label }}<br>
+            {{ form.confirm(class_='input-field') }}
+            {% for error in form.confirm.errors %}
+              <div class="flash-message">{{ error }}</div>
+            {% endfor %}
+        </div>
+
+        <div>
+            {{ form.submit(class_='btn-primary') }}
+        </div>
     </form>
+
     <div class="login-link">
         Déjà un compte ? <a href="{{ url_for('login') }}">Connectez-vous</a>
     </div>
