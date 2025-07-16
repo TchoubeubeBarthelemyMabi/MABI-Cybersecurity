@@ -1,5 +1,5 @@
-import os, time, binascii, hashlib, hmac
-import requests, traceback
+# [Importations système & sécurité]
+import os, time, binascii, hashlib, hmac, requests, traceback
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -10,30 +10,30 @@ from wtforms.validators import DataRequired, Email, EqualTo
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.exceptions import HTTPException
 
-# Modules personnalisés
+# [Modules personnalisés]
 from security_module import attach_security
 from vuln_scan import scan_site
 
-# Chargement des variables d’environnement (dev uniquement)
+# [Chargement des variables d’environnement]
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
     pass
 
-# Initialisation de l'application Flask
+# [Initialisation Flask]
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback_secret_key')
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///mabi.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialisation des extensions
+# [Extensions Flask]
 db = SQLAlchemy(app)
 migrate = Migrate(app, db, render_as_batch=True)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-# Gestion des erreurs serveur
+# [Gestion des exceptions]
 @app.errorhandler(Exception)
 def handle_exception(e):
     tb = traceback.format_exc()
@@ -42,7 +42,7 @@ def handle_exception(e):
         return e
     return jsonify({"error": "Une erreur serveur est survenue."}), 500
 
-# Modèle utilisateur
+# [Modèle utilisateur]
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(150), unique=True, nullable=False)
@@ -67,7 +67,7 @@ class User(db.Model, UserMixin):
             return False
         return hmac.compare_digest(self.api_key_hash, hashlib.sha256(key.encode()).hexdigest())
 
-# Historique des scans
+# [Historique des scans]
 class ScanHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
@@ -77,10 +77,10 @@ class ScanHistory(db.Model):
     status = db.Column(db.String(20), nullable=False)
     timestamp = db.Column(db.DateTime, default=db.func.current_timestamp())
 
-# Formulaires
+# [Formulaires]
 class SignupForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Mot de passe', validators=[DataRequired(), EqualTo('confirm', message='Les mots de passe doivent correspondre.')])
+    password = PasswordField('Mot de passe', validators=[DataRequired(), EqualTo('confirm')])
     confirm = PasswordField('Répéter mot de passe')
     submit = SubmitField('Inscription')
 
@@ -89,15 +89,13 @@ class LoginForm(FlaskForm):
     password = PasswordField('Mot de passe', validators=[DataRequired()])
     submit = SubmitField('Connexion')
 
-# Gestion des utilisateurs connectés
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Clé API VirusTotal
 VT_API_KEY = os.getenv('VT_API_KEY', '')
 
-# Fonction de vérification de lien
+# [Scan VirusTotal]
 def verifier_url(url):
     if not url:
         return {"status": "error", "message": "URL vide."}
@@ -117,15 +115,17 @@ def verifier_url(url):
             data = r2.json()['data']['attributes']
             if data['status'] == 'completed':
                 m = data['stats'].get('malicious', 0)
-                return {"status": "danger" if m > 0 else "safe",
-                        "message": f"🚨 Lien malveillant détecté par {m} antivirus ⚠️" if m > 0
-                                   else "✅ Ce lien semble sécurisé."}
+                return {
+                    "status": "danger" if m > 0 else "safe",
+                    "message": f"🚨 Lien malveillant détecté par {m} antivirus ⚠️" if m > 0
+                               else "✅ Ce lien semble sécurisé."
+                }
             time.sleep(1)
         return {"status": "waiting", "message": "⏳ Analyse en cours, patientez…"}
     except Exception as e:
         return {"status": "error", "message": f"Exception lors de l’analyse : {e}"}
 
-# Routes principales
+# [Routes de ton app]
 @app.route('/', methods=['GET', 'POST'])
 @login_required
 def home():
@@ -134,11 +134,10 @@ def home():
         url = request.form.get('url')
         if url:
             result = verifier_url(url)
-            if current_user:
-                history = ScanHistory(user_id=current_user.id, scan_type='link',
-                                      target=url, result=result['message'], status=result['status'])
-                db.session.add(history)
-                db.session.commit()
+            history = ScanHistory(user_id=current_user.id, scan_type='link',
+                                  target=url, result=result['message'], status=result['status'])
+            db.session.add(history)
+            db.session.commit()
     return render_template('home.html', result=result)
 
 @app.route('/vulnscan', methods=['GET', 'POST'])
@@ -158,10 +157,10 @@ def vulnscan():
             }[vuln_status]
             context = {
                 "headers": [f"{'🟢' if v=='✅' else '🔴'} {k}" for k, v in report['headers'].items()],
-                "subdomains": report['subdomains'] or [],
-                "sensitive": report['sensitive_paths'] or [],
-                "sql": report.get('sql_injection', ''),
-                "ports": report['open_ports'] or [],
+                "subdomains": report['subdomains'],
+                "sensitive": report['sensitive_paths'],
+                "sql": report.get('sql_injection'),
+                "ports": report['open_ports'],
                 "conclusion": conclusion,
                 "status": vuln_status
             }
@@ -208,10 +207,4 @@ def signup():
 @login_required
 def logout():
     logout_user()
-    flash("Déconnexion réussie.", "info")
-    return redirect(url_for('login'))
-
-@app.route('/about')
-@login_required
-def about():
-    
+    flash("Déconnexion réussie
