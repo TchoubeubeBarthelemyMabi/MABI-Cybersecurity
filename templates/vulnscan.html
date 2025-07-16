@@ -4,7 +4,7 @@
 <div class="text-background" style="max-width:900px; margin:auto;">
   <h2 style="font-size:32px; margin-bottom:20px;">Scanner de Vulnérabilités</h2>
 
-  <!-- Formulaire scanner site -->
+  <!-- Formulaire de scan -->
   <form id="vulnscanForm" method="POST" style="margin-bottom:20px;">
     <input type="text" name="site_url" placeholder="https://example.com"
            style="width:70%; padding:12px; font-size:16px; border-radius:6px; border:1px solid #ccc" required>
@@ -14,15 +14,18 @@
     </button>
   </form>
 
-  <!-- Loader visible uniquement pendant le scan -->
+  <!-- Loader -->
   <div id="loading" style="display:none;">
     <div class="loader"></div>
     <p style="text-align:center; font-weight:600;">Analyse en cours… Veuillez patienter ⏳</p>
   </div>
 
+  <!-- Affichage des résultats -->
   {% if results %}
     <h3 style="margin-top:30px;">🔍 Résultats détaillés :</h3>
     <ul style="font-size:16px; line-height:1.8; padding-left:20px;">
+
+      {% if results.headers %}
       <li><strong>🛡️ Headers de sécurité :</strong>
         <ul>
           {% for h in results.headers %}
@@ -30,7 +33,9 @@
           {% endfor %}
         </ul>
       </li>
+      {% endif %}
 
+      {% if results.subdomains %}
       <li><strong>🌐 Sous-domaines accessibles :</strong>
         <ul>
           {% for sd in results.subdomains %}
@@ -38,7 +43,9 @@
           {% endfor %}
         </ul>
       </li>
+      {% endif %}
 
+      {% if results.sensitive %}
       <li><strong>🔒 Pages sensibles :</strong>
         <ul>
           {% for p in results.sensitive %}
@@ -46,11 +53,15 @@
           {% endfor %}
         </ul>
       </li>
+      {% endif %}
 
+      {% if results.sql %}
       <li><strong>💉 Test d'injection SQL :</strong><br>
         {{ results.sql|safe }}
       </li>
+      {% endif %}
 
+      {% if results.ports %}
       <li><strong>📡 Ports ouverts :</strong>
         <ul>
           {% for port in results.ports %}
@@ -58,11 +69,14 @@
           {% endfor %}
         </ul>
       </li>
+      {% endif %}
     </ul>
 
+    {% if results.conclusion %}
     <p class="{{ results.status }}" style="font-size:18px; font-weight:600; margin-top:20px;">
       {{ results.conclusion }}
     </p>
+    {% endif %}
 
     {% if results.status == 'danger' %}
     <p style="margin-top:10px;">🚨 Pour un audit complet et des recommandations personnalisées, contactez notre consultant en sécurité.</p>
@@ -71,10 +85,12 @@
       📧 Contacter un consultant
     </a>
     {% endif %}
+
+  {% else %}
+    <p style="margin-top:30px;">Aucun résultat à afficher pour le moment.</p>
   {% endif %}
 </div>
 
-<!-- Script spécifique au formulaire vulnérabilité -->
 <script>
 document.getElementById("vulnscanForm").addEventListener("submit", function() {
   document.getElementById("loading").style.display = "block";
