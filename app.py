@@ -207,4 +207,5 @@ def signup():
 @login_required
 def logout():
     logout_user()
-    flash("Déconnexion réussie
+    flash("Déconnexion réussie.", "info")
+    return redirect(url_for('login'))
